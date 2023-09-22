@@ -1,0 +1,288 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "Urls": {
+      "type": "string",
+      "description": "Base URLs the server listens on, must be configured independently of the routes below"
+    },
+    "Logging": {
+      "type": "object",
+      "properties": {
+        "LogLevel": {
+          "type": "object",
+          "properties": {
+            "Default": {
+              "type": "string"
+            },
+            "Yarp": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ReverseProxy": {
+      "type": "object",
+      "description": "the root level reverse proxy settings",
+      "properties": {
+        "Routes": {
+          "type": "object",
+          "description": "a yarp route",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "ClusterId": {
+                "type": "string",
+                "description": "Matches anything and routes it to the specified address."
+              },
+ 
+              "Order": {
+                "type": "number",
+                "description": "Lower numbers have higher precedence"
+              },
+              "MaxRequestBodySize": {
+                "type": "number",
+                "description": "In bytes. An optional override of the server's limit (30MB default). Set to -1 to disable."
+              },
+              "Authorization Policy": {
+                "type": "string",
+                "description": "Name of the policy or \"Default\", \"Anonymous\""
+              },
+              "CorsPolicy": {
+                "type": "string",
+                "description": "Name of the CorsPolicy to apply to this route or \"Default\", \"Disable\""
+              },
+              "Match": {
+                "type": "object",
+                "properties": {
+                  "Path": {
+                    "type": "string",
+                    "description": "The path to match using ASP.NET syntax."
+                  },
+                  "Hosts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "hostname"
+                    },
+                    "description": "List of hostnames."
+                  },
+                  "Methods": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The HTTP methods that match, unspecified is all"
+                  },
+                  "Headers": {
+                    "type": "array",
+                    "description": "The headers to match, unspecified is any",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Name": {
+                          "type": "string",
+                          "description": "Name of the header"
+                        },
+                        "Values": {
+                          "type": "array",
+                          "description": "Matches are against any of these values",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "Mode": {
+                          "type": "string",
+                          "description": "Matching mode for the header value",
+                          "enum": ["ExactHeader", "HeaderPrefix", "Exists", "Contains", "NotContains"]
+                        },
+                        "IsCaseSensitive": {
+                          "type": "boolean",
+                          "description": "Determines if the header match is case-sensitive"
+                        }
+                      },
+                      "required": ["Name", "Values", "Mode", "IsCaseSensitive"]
+                    }
+                  },
+                  "QueryParameters": {
+                    "type": "array",
+                    "description": "The query parameters to match, unspecified is any",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "Name": {
+                          "type": "string",
+                          "description": "Name of the query parameter"
+                        },
+                        "Values": {
+                          "type": "array",
+                          "description": "Matches are against any of these values",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "Mode": {
+                          "type": "string",
+                          "description": "Matching mode for the query parameter value",
+                          "enum": ["Exact", "Prefix", "Exists", "Contains", "NotContains"]
+                        },
+                        "IsCaseSensitive": {
+                          "type": "boolean",
+                          "description": "Determines if the query parameter match is case-sensitive"
+                        }
+                      },
+                      "required": ["Name", "Values", "Mode", "IsCaseSensitive"]
+                    }
+                  },
+                  "MetaData": {
+                    "type": "object",
+                    "description": "List of key value pairs that can be used by custom extensions",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "Transforms": {
+                    "type": "array",
+                    "description": "List of transforms. See the Transforms article for more details",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "RequestHeader": {
+                          "type": "string",
+                          "description": "Name of the request header to be transformed"
+                        },
+                        "Set": {
+                          "type": "string",
+                          "description": "Value to set for the specified request header"
+                        }
+                      },
+                      "required": ["RequestHeader", "Set"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Clusters": {
+          "type": "object",
+          "description": "Clusters tell the proxy where and how to forward requests",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "Destinations": {
+                "type": "object",
+                "description": "Mapping of destination names to their respective configurations",
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "Address": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "URI for the destination"
+                    },
+                    "Health": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "Override URI for active health checks"
+                    }
+                  },
+                  "required": ["Address"]
+                }
+              },
+              "LoadBalancingPolicy": {
+                "type": "string",
+                "description": "Defaults to \"PowerOfTwoChoices\" Alternatively \"FirstAlphabetical\", \"Random\", \"RoundRobin\", \"LeastRequests\""
+              },
+              "SessionAffinity": {
+                "type": "object",
+                "properties": {
+                  "Enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Flag to indicate if session affinity is enabled. Defaults to \"false\"."
+                  },
+                  "Policy": {
+                    "type": "string",
+                    "enum": ["Cookie", "CustomHeader"],
+                    "default": "Cookie",
+                    "description": "Policy for session affinity. Default is \"Cookie\". Alternatively, it can be \"CustomHeader\"."
+                  },
+                  "FailurePolicy": {
+                    "type": "string",
+                    "enum": ["Redistribute", "Return503Error"],
+                    "default": "Redistribute",
+                    "description": "Policy to handle failures. Default is \"Redistribute\". Alternatively, it can be \"Return503Error\"."
+                  },
+                  "Settings": {
+                    "type": "object",
+                    "properties": {
+                      "CustomHeaderName": {
+                        "type": "string",
+                        "default": "X-Yarp-Proxy-Affinity",
+                        "description": "Name of the custom header for session affinity. Defaults to \"X-Yarp-Proxy-Affinity\"."
+                      }
+                    }
+                  }
+                },
+                "required": ["Enabled"]
+              },
+              "HealthCheck": {
+                "type": "object",
+                "properties": {
+                  "Active": {
+                    "type": "object",
+                    "description": "Makes API calls to validate the health.",
+                    "properties": {
+                      "Enabled": { "type": "boolean", "description": "Flag to enable active health checks." },
+                      "Interval": { "type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}$" },
+                      "Timeout": { "type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}$" },
+                      "Policy": { "type": "string", "enum": ["ConsecutiveFailures"] },
+                      "Path": { "type": "string", "description": "API endpoint to query for health state." }
+                    }
+                  },
+                  "Passive": {
+                    "type": "object",
+                    "description": "Disables destinations based on HTTP response codes.",
+                    "properties": {
+                      "Enabled": { "type": "boolean", "default": false },
+                      "Policy": { "type": "string", "enum": ["TransportFailureRateHealthPolicy"] },
+                      "ReactivationPeriod": { "type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}$" }
+                    }
+                  }
+                }
+              },
+              "HttpClient": {
+                "type": "object",
+                "description": "Configuration of HttpClient instance used to contact destinations.",
+                "properties": {
+                  "SSLProtocols": { "type": "string", "enum": ["Tls13"] },
+                  "DangerousAcceptAnyServerCertificate": { "type": "boolean" },
+                  "MaxConnectionsPerServer": { "type": "integer" },
+                  "EnableMultipleHttp2Connections": { "type": "boolean" },
+                  "RequestHeaderEncoding": { "type": "string", "enum": ["Latin1"] }
+                }
+              },
+              "HttpRequest": {
+                "type": "object",
+                "description": "Options for sending request to destination.",
+                "properties": {
+                  "ActivityTimeout": { "type": "string", "pattern": "^\\d{2}:\\d{2}:\\d{2}$" },
+                  "Version": { "type": "string", "enum": ["2"] },
+                  "VersionPolicy": { "type": "string", "enum": ["RequestVersionOrLower"] },
+                  "AllowResponseBuffering": { "type": "boolean" }
+                }
+              },
+              "MetaData": {
+                "type": "object",
+                "description": "Custom Key value pairs.",
+                "additionalProperties": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
